@@ -1,6 +1,6 @@
 require 'faye/websocket'
 require 'set'
-require './document.rb'
+require './lib/document.rb'
 require 'json'
 $connections = Set.new
 $document = Document.new

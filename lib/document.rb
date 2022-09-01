@@ -1,4 +1,4 @@
-require "./tree.rb"
+require "tree.rb"
 require "set"
 
 def adjustOperation(operation1, operation2)
@@ -45,20 +45,19 @@ class Document
   end
 
   def getId
-    counter = @counter
     @counter += 1
-    return (@priority * 0x1000000) + counter
+    return (@priority * 0x1000000) + @counter
   end
 
   def add(operation)
+    @operations.push(operation)
     case operation["type"]
     when "delete"
       if !@deletions.contains(operation["index"])
         index = @deletions.inverse(operation["index"])
         deletions.union(operation["index"])
-        @text = "#{@text.slice(0, index)}#{@text.slice(index + 1)}"
-        puts "after delete"
-        puts @text
+        @text.slice!(index,1)
+        @text = @text || ""
         for i in (0).upto((@locations.length) - 1) do
           if @locations[i] > index
             @locations[i] -= 1
@@ -68,9 +67,7 @@ class Document
     when "insert"
       @deletions.forwardTransform(operation["index"])
       index = @deletions.inverse(operation["index"])
-      @text = "#{@text.slice(0, index)}#{operation["value"]}#{text.slice(index)}"
-      puts "after insert"
-      puts @text
+      @text.insert(index, operation["value"])
       for i in (0).upto((@locations.length) - 1) do
         if locations[i] > index
           locations[i] += 1
@@ -79,14 +76,13 @@ class Document
     end
   end
 
-  def merge(operation)
-    currentId = @priority + @counter
-    puts operation
-    if (operation["priority"] == @priority) && (operation["id"] < currentId)
+  def merge(operation, ignoreSelf = true )
+    currentId = (@priority * 0x1000000) + @counter
+    if ignoreSelf && (operation["priority"] == @priority) && (operation["id"] <= currentId)
       return
     end
 
-    if (@revision < @operations.length) && (@operations[@revision]["id"] == id)
+    if (@revision < @operations.length) && (@operations[@revision]["id"] == operation["id"])
       while (@revision < @operations.length) && @context.include?(@operations[@revision]["id"])
         @context.delete?(@operations[@revision]["id"])
         @revision += 1
@@ -95,8 +91,6 @@ class Document
     end
 
     for index in @revision.upto((@operations.length) -1) do
-      puts @operations.length
-      puts @revision
       if @operations[index]["id"] == operation["id"]
         @context.add(operation["id"])
       end
@@ -172,5 +166,48 @@ class Document
       result.push({priority: @priority, index: (index + 1), id: getId, value: newText[i]})
     end
     return result
+  end
+end
+
+if __FILE__ == $0
+  bundle = []
+  bundle[0] = [
+    {"priority"=>6780298, "type"=>"insert", "index"=>0, "id"=>7109657755649, "value"=>"3"},
+    {"priority"=>6780298, "type"=>"insert", "index"=>1, "id"=>7109657755650, "value"=>"3"},
+    {"priority"=>6780298, "type"=>"insert", "index"=>2, "id"=>7109657755651, "value"=>"\n"}
+  ]
+  bundle[1] = [
+    {"priority"=>6248022, "type"=>"insert", "index"=>1, "id"=>6551525916673, "value"=>"2"},
+    {"priority"=>6248022, "type"=>"insert", "index"=>2, "id"=>6551525916674, "value"=>"2"}
+  ]
+  bundle[2] = [
+    {"priority"=>6780298, "type"=>"insert", "index"=>4, "id"=>7109657755652, "value"=>"3"},
+    {"priority"=>6780298, "type"=>"insert", "index"=>5, "id"=>7109657755653, "value"=>"3"}
+  ]
+  bundle[3] = [
+    {"priority"=>6780298, "type"=>"insert", "index"=>6, "id"=>7109657755654, "value"=>"h"},
+    {"priority"=>6780298, "type"=>"insert", "index"=>7, "id"=>7109657755655, "value"=>"h"},
+    {"priority"=>6780298, "type"=>"insert", "index"=>8, "id"=>7109657755656, "value"=>"h"}
+  ]
+  bundle[4] = [
+    {"priority"=>6248022, "type"=>"insert", "index"=>5, "id"=>6551525916675, "value"=>"4"},
+    {"priority"=>6248022, "type"=>"insert", "index"=>6, "id"=>6551525916676, "value"=>"4"}
+  ]
+  bundle[5] = [
+    {"priority"=>6248022, "type"=>"insert", "index"=>7, "id"=>6551525916677, "value"=>"4"}
+  ]
+  bundle[6] = [
+    {"priority"=>6248022, "type"=>"insert", "index"=>8, "id"=>6551525916678, "value"=>"o"}
+  ]
+  document = Document.new
+  def merge(bundle, document)
+    for op in bundle do
+      document.merge(op)
+    end
+  end
+
+  for i in (0).upto(bundle.length - 1) do
+    merge(bundle[i], document)
+    p "bundle#{ i + 1} operationCount: #{document.operationsCount} text: #{document.text}"
   end
 end

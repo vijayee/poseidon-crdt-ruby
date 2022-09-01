@@ -1,4 +1,4 @@
-class Node
+class TreeNode
   attr_reader :value, :left, :right, :height, :size
 
   def initialize(value, left = nil, right = nil)
@@ -7,9 +7,9 @@ class Node
     if leftHeight > rightHeight + 1
       @value = left.value
       @left = left.left
-      @right = Node.new(value - left.value, left.right, right)
+      @right = TreeNode.new(value - left.value, left.right, right)
     elsif rightHeight > leftHeight + 1
-      @left = Node.new(value, left, right.left)
+      @left = TreeNode.new(value, left, right.left)
       @value = value + right.value
       @right = right.right
     else
@@ -25,7 +25,7 @@ end
 class Tree
   def initialize(value = nil)
     if (!value.nil?)
-      @root = Node.new(value)
+      @root = TreeNode.new(value)
     else
       @root = nil
     end
@@ -49,10 +49,10 @@ class Tree
     end
     if i <= node.value
       transformLeft = !node.left.nil? ? forwardTransform(i, node.left) : node.left
-      return Node.new(node.value + 1, transformLeft, node.right)
+      return TreeNode.new(node.value + 1, transformLeft, node.right)
     else
       transformRight = !node.right.nil? ? forwardTransform(i - node.value, node.right) : node.right
-      return Node.new(node.value, node.left, transformRight)
+      return TreeNode.new(node.value, node.left, transformRight)
     end
   end
 
@@ -94,16 +94,16 @@ class Tree
         @root = union(i, @root)
         return @root
       else
-        @root = Node.new(i)
+        @root = TreeNode.new(i)
         return @root
       end
     end
     if i < node.value
-      unionLeft = !node.left.nil? ? union(i, node.left) : Node.new(i)
-      return Node.new(node.value, unionLeft, node.right)
+      unionLeft = !node.left.nil? ? union(i, node.left) : TreeNode.new(i)
+      return TreeNode.new(node.value, unionLeft, node.right)
     elsif i > node.value
-      unionRight = !node.right.nil? ? union(i - node.value, node.right) : Node.new(i - node.value)
-      return Node.new(node.value, node.left, unionRight)
+      unionRight = !node.right.nil? ? union(i - node.value, node.right) : TreeNode.new(i - node.value)
+      return TreeNode.new(node.value, node.left, unionRight)
     else
       return node
     end
